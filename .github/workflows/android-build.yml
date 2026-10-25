@@ -1,0 +1,44 @@
+name: Android APK Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform 37
+        run: |
+          sdkmanager --install "platforms;android-37"
+          yes | sdkmanager --licenses || true
+
+      - name: Build phone APK
+        run: ./gradlew :app:assembleFullDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleanyourtv-islamic-phone-apk
+          path: app/build/outputs/apk/full/debug/*.apk
+          if-no-files-found: error
