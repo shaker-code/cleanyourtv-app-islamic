@@ -1,19 +1,22 @@
-name: Android APK Build
+name: Build Islamic APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
     steps:
-      - name: Checkout repository
+      - name: Checkout repository and submodules
         uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -26,20 +29,23 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-          with:
-            packages: 'platforms;android-37'
 
-      - name: Install Android platform
+      - name: Install Android platform 37
         run: |
-          yes | sdkmanager --licenses || true
           sdkmanager --install "platforms;android-37"
+          yes | sdkmanager --licenses || true
 
-      - name: Build APK
-        run: ./gradlew :app:assembleFullDebug --no-daemon --stacktrace
+      - name: Build full debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleFullDebug \
+            --no-daemon \
+            --stacktrace
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: cleanyourtv-islamic-phone-apk
           path: app/build/outputs/apk/full/debug/*.apk
           if-no-files-found: error
+          retention-days: 7
